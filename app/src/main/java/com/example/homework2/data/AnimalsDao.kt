@@ -1,6 +1,7 @@
 package com.example.homework2.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -26,4 +27,7 @@ interface AnimalsDao{
 
     @Query("SELECT * FROM animals WHERE lower(name) = lower(:name)")
     fun getAnimalByName(name: String): AnimalDBModel
+
+    @Delete
+    fun deleteAnimal(animal: AnimalDBModel)
 }

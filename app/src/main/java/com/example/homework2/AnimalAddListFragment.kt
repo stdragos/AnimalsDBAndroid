@@ -18,8 +18,6 @@ class AnimalAddListFragment : Fragment() {
 
     val appDao = ApplicationController.instance.appDatabase
 
-    val AnimalList: List<AnimalDBModel> = appDao.getAnimalsDao().getAllAnimals()
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -37,6 +35,15 @@ class AnimalAddListFragment : Fragment() {
     private fun doAddAnimal() {
         var animalName = view?.findViewById<EditText>(R.id.et_animal_name)?.text.toString()
         var continentName = view?.findViewById<EditText>(R.id.et_continent_name)?.text.toString()
+
+        if(animalName.isEmpty() || continentName.isEmpty() || animalName.isBlank() || continentName.isBlank()){
+            AlertDialog.Builder(requireContext())
+                .setTitle("Error")
+                .setMessage("Please fill in all fields")
+                .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                .show()
+            return
+        }
 
         if(appDao.getContinentsDao().getContinentByName(continentName) == null) {
             AlertDialog.Builder(requireContext())
@@ -69,7 +76,7 @@ class AnimalAddListFragment : Fragment() {
                 it.name,
                 appDao.getContinentsDao().getContinentById(it.continentId).name
             )
-        }
+        }.toMutableList()
 
         view?.findViewById<RecyclerView>(R.id.rv_animal_list)?.apply {
             this.layoutManager = layoutManager
