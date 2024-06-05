@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:layout_marginTop="16dp"
-        android:background="@drawable/button_gradient"
+        android:background="@drawable/button_selector"
         android:paddingStart="20dp"
         android:paddingTop="10dp"
         android:paddingEnd="20dp"
