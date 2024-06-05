@@ -21,8 +21,6 @@ import com.example.homework2.models.AnimalModel
 
 class AnimalAddListFragment : Fragment() {
 
-    val appDao = ApplicationController.instance.appDatabase
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
