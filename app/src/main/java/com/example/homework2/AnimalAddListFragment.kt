@@ -1,5 +1,6 @@
 package com.example.homework2
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homework2.adapters.AnimalListAdapter
 import com.example.homework2.data.models.AnimalDBModel
+import com.example.homework2.data.models.ContinentDBModel
+import com.example.homework2.data.repositories.AnimalRepository
+import com.example.homework2.data.repositories.ContinentRepository
+import com.example.homework2.helpers.extensions.logErrorMessage
 import com.example.homework2.models.AnimalModel
 
 class AnimalAddListFragment : Fragment() {
@@ -36,7 +41,7 @@ class AnimalAddListFragment : Fragment() {
         var animalName = view?.findViewById<EditText>(R.id.et_animal_name)?.text.toString()
         var continentName = view?.findViewById<EditText>(R.id.et_continent_name)?.text.toString()
 
-        if(animalName.isEmpty() || continentName.isEmpty() || animalName.isBlank() || continentName.isBlank()){
+        if (animalName.isEmpty() || continentName.isEmpty() || animalName.isBlank() || continentName.isBlank()) {
             AlertDialog.Builder(requireContext())
                 .setTitle("Error")
                 .setMessage("Please fill in all fields")
@@ -45,42 +50,48 @@ class AnimalAddListFragment : Fragment() {
             return
         }
 
-        if(appDao.getContinentsDao().getContinentByName(continentName) == null) {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Error")
-                .setMessage("Continent does not exist")
-                .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                .show()
-            return
-        }
+        ContinentRepository.getContinentByName(continentName) { continent ->
+            if (continent == null) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Error")
+                    .setMessage("Continent does not exist")
+                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                    .show()
 
-        val animal = appDao.getAnimalsDao().getAnimalByName(animalName)
-        var x = 0L
-        if(animal != null) {
-            appDao.getAnimalsDao().update(animal.id, appDao.getContinentsDao().getContinentByName(continentName).id)
-            x = appDao.getContinentsDao().getContinentByName(continentName).id
-        } else {
-            appDao.getAnimalsDao().insertAnimal(AnimalDBModel(name=animalName, continentId = appDao.getContinentsDao().getContinentByName(continentName).id))
+            } else {
+                AnimalRepository.getAnimalByName(animalName) { animal ->
+                    if (animal != null) {
+                        AnimalRepository.updateAnimal(animal.id, continent.id) {
+                            "Updated Animal".logErrorMessage()
+                            setupAnimalList()
+                        }
+                    } else {
+                        AnimalRepository.insertAnimal(
+                            AnimalDBModel(
+                                name = animalName,
+                                continentId = continent.id
+                            )
+                        ) {
+                            "Inserted Animal".logErrorMessage()
+                            setupAnimalList()
+                        }
+                    }
+                }
+            }
         }
-
-        setupAnimalList()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun setupAnimalList() {
         val layoutManager = LinearLayoutManager(context)
 
-        val animalListDB = appDao.getAnimalsDao().getAllAnimals()
+        AnimalRepository.getAllAnimalsWithContinent { animalList ->
+            view?.findViewById<RecyclerView>(R.id.rv_animal_list)?.apply {
+                this.layoutManager = layoutManager
 
-        val animalList = animalListDB.map {
-            AnimalModel(
-                it.name,
-                appDao.getContinentsDao().getContinentById(it.continentId).name
-            )
-        }.toMutableList()
-
-        view?.findViewById<RecyclerView>(R.id.rv_animal_list)?.apply {
-            this.layoutManager = layoutManager
-            this.adapter = AnimalListAdapter(animalList)
+                this.adapter = AnimalListAdapter(animalList as MutableList<AnimalModel>)
+                this.adapter?.notifyDataSetChanged()
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.homework2.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,14 +9,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homework2.ApplicationController
 import com.example.homework2.R
+import com.example.homework2.data.repositories.AnimalRepository
 import com.example.homework2.helpers.extensions.logErrorMessage
 import com.example.homework2.models.AnimalModel
 
 class AnimalListAdapter(
     private val items: MutableList<AnimalModel>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-    val appDao = ApplicationController.instance.appDatabase
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -52,17 +52,28 @@ class AnimalListAdapter(
     }
 
 
+    @SuppressLint("NotifyDataSetChanged")
+    private fun updateItems(newItems: List<AnimalModel>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
+    }
+
     private fun doDeleteAnimal(view: View, position: Int) {
         val name = view.findViewById<TextView>(R.id.tv_animal_name)?.text.toString()
-        if(appDao.getAnimalsDao().getAnimalByName(name) == null) {
-            return
-        }
-        appDao.getAnimalsDao().deleteAnimal(appDao.getAnimalsDao().getAnimalByName(name))
-        items.removeAt(position)
-        notifyItemRemoved(position)
 
-        for (i in position until items.size) {
-            notifyItemChanged(i)
+        AnimalRepository.getAnimalByName(name) { animal ->
+            if (animal != null) {
+
+                AnimalRepository.deleteAnimal(animal) {
+                    items.removeAt(position)
+                    notifyItemRemoved(position)
+
+                    for (i in position until items.size) {
+                        notifyItemChanged(i)
+                    }
+                }
+            }
         }
     }
 
